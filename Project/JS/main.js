@@ -1,10 +1,10 @@
-// Main JavaScript file for LightCast application
+// Main JavaScript file for VibeDeck application
 // Handles DOM interactions, form validation, animations, and UI toggles
 
 document.addEventListener("DOMContentLoaded", function () {
   // Login form validation
   // Select the login form and add submit event listener
-  const loginForm = document.querySelector('form[method="POST"]');
+  const loginForm = document.getElementById("loginForm");
   if (loginForm) {
     loginForm.addEventListener("submit", function (event) {
       // Get trimmed values from username and password fields
@@ -44,6 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
       errorDiv.className = "errors";
       // Insert error div before the form in the main card
       const main = document.querySelector("main.card");
+      if (!main) return;
       main.insertBefore(errorDiv, main.querySelector("form"));
     }
     // Populate error div with unordered list of errors
@@ -77,7 +78,16 @@ document.addEventListener("DOMContentLoaded", function () {
     hamburgerBtn.addEventListener("click", function () {
       // Toggle 'show' class on menu to display/hide it
       menu.classList.toggle("show");
+      hamburgerBtn.setAttribute("aria-expanded", menu.classList.contains("show").toString());
     });
+  }
+
+  const profileDialog = document.getElementById("profileDialog");
+  const openProfileDialog = document.getElementById("openProfileDialog");
+  const closeProfileDialog = document.getElementById("closeProfileDialog");
+  if (profileDialog && openProfileDialog && closeProfileDialog) {
+    openProfileDialog.addEventListener("click", () => profileDialog.showModal());
+    closeProfileDialog.addEventListener("click", () => profileDialog.close());
   }
 
   // Fade-in animation for main content on pages other than login

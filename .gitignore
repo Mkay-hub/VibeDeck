@@ -1,0 +1,3 @@
+Project/uploads/*
+!Project/uploads/.htaccess
+.env

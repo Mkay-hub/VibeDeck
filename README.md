@@ -1,44 +1,37 @@
-# ITP622A_Assignment
+# VibeDeck
 
-## Overview
-
-VibeDeck is a social media application built with PHP, MySQL, HTML, CSS, and JavaScript. It allows users to register, login, post updates, upload images, manage profiles, and send private messages.
+VibeDeck is a small PHP and MySQL social-media application. Registered users can publish text/image posts, manage a profile, and exchange private messages.
 
 ## Requirements
 
-- PHP 7.4 or higher
-- MySQL 5.7 or higher
-- Apache server (e.g., XAMPP, WAMP, or MAMP)
-- Web browser ( Any is okay, but we reccomand Microsoft Edge or Google Chrome)
+- PHP 7.4+ with PDO MySQL, Fileinfo, and GD/image support enabled
+- MySQL 5.7+ or MariaDB
+- Apache (for example, XAMPP) and a configured PHP mail transport for password-reset emails
 
-## Installation and Setup
+## Local setup
 
-1. Clone or download the repository to your local machine.
-2. Place the `LightCast` folder in your web server's document root (e.g., `htdocs` for XAMPP).
-3. Import the database schema.
-4. Update database credentials in `LightCast/includes/config.php` if needed.
-5. Start your web server and MySQL.
-6. Access the application at `http://localhost/LightCast/login.php`.
+1. Place this repository in your web-server document root. For XAMPP, the application URL is normally `http://localhost/ITP622A_Assignment/Project/`.
+2. Import `Project/sql/schema.sql` into MySQL. The schema creates `socialdb` if it does not exist and does not delete existing data.
+3. Configure database credentials through environment variables: `DB_HOST`, `DB_NAME`, `DB_USER`, and `DB_PASS`. Local XAMPP defaults are used only when these are absent.
+4. Set `APP_URL` to the application's public base URL, for example `http://localhost/ITP622A_Assignment/Project`. It is used in password-reset email links.
+5. Ensure Apache can write to `Project/uploads/`. The directory contains an `.htaccess` policy that disables PHP-family handlers.
+6. Start Apache and MySQL, then open the application URL above.
 
-## Usage
+## Security and deployment notes
 
-- Register a new account or login with existing credentials.
-- Post updates and upload images on the dashboard.
-- View and edit your profile.
-- Send private messages to other users.
+- Never commit production database credentials, reset tokens, or real account passwords. `.env` is ignored by Git; configure environment values through Apache/PHP or your hosting platform.
+- Password resets are sent through PHP `mail()`. Configure a real SMTP/mail transport before deploying; otherwise no reset email will arrive.
+- Serve the application over HTTPS in production so session cookies receive the `Secure` flag.
+- Back up the database before schema changes. Existing databases need a migration for the new `posts.image_path`, `users.profile_pic` path type, and `password_resets` table; see the comments in `Project/sql/schema.sql`.
+- The application does not include real sample user credentials. Create development accounts through the registration page.
 
-## Sample Data for Testing
+## Development checklist
 
-The following users have been registered in the database:
+Run PHP linting and test the following before release:
 
-1. Username: AliceJohnson, Password: Sunshine2023!
-2. Username: BobSmith, Password: BlueOcean45@
-3. Username: CharlieBrown, Password: Chocolate99#
-4. Username: DianaPrince, Password: WonderWoman$7
-5. Username: EthanHunt, Password: MissionImpossible\*2
-6. Username: FionaGreen, Password: EmeraldEyes!8
-7. Username: GeorgeLucas, Password: StarWarsForce^3
-8. Username: HannahMontana, Password: BestOfBothWorlds&4
-9. Username: IanFleming, Password: JamesBond007%
-10. Username: JuliaRoberts, Password: PrettyWoman@9
-11. Username: Mkay, Password: 18Sept2005
+- registration and duplicate username/email validation;
+- login, logout, and repeated invalid sign-in attempts;
+- password reset email, expired token, and token reuse;
+- CSRF rejection on all write actions;
+- valid and invalid image uploads;
+- profile updates, posts, and private messages.

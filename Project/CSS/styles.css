@@ -584,3 +584,36 @@ textarea:focus {
         grid-template-columns: 1fr;
     }
 }
+
+.modal::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.success {
+    color: #155724;
+    background: #d4edda;
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+}
+
+.logout-form {
+    display: inline;
+}
+
+.logout-form button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--dark-text);
+    cursor: pointer;
+    padding: 0.5rem;
+    font: inherit;
+}
+
+.post-image {
+    display: block;
+    max-width: min(100%, 300px);
+    max-height: 300px;
+    object-fit: contain;
+    margin: 0.75rem auto;
+}

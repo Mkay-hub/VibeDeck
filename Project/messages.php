@@ -2,6 +2,7 @@
 // Include configuration and authentication
 require_once 'includes/config.php';
 require_once 'includes/auth.php';
+require_once 'includes/functions.php';
 
 // Check if user is logged in
 check_login();
@@ -16,11 +17,13 @@ $receiver_id = null;
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['search'])) {
+    if (!valid_csrf_token()) {
+        $errors[] = 'Your session form has expired. Please try again.';
+    } elseif (isset($_POST['search'])) {
         // Handle user search
         $search_term = trim($_POST['search_term'] ?? '');
         if (!empty($search_term)) {
-            $stmt = $pdo->prepare("SELECT id, username, email FROM users WHERE username LIKE ? OR email LIKE ? AND id != ?");
+            $stmt = $pdo->prepare("SELECT id, username, email FROM users WHERE (username LIKE ? OR email LIKE ?) AND id != ?");
             $stmt->execute(['%' . $search_term . '%', '%' . $search_term . '%', $current_user_id]);
             $search_results = $stmt->fetchAll();
         }
@@ -29,11 +32,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $receiver_id = (int)$_POST['receiver_id'];
         $message = trim($_POST['message']);
         if (!empty($message) && $receiver_id > 0) {
+            $stmt = $pdo->prepare('SELECT id FROM users WHERE id = ? AND id != ?');
+            $stmt->execute([$receiver_id, $current_user_id]);
+            if (!$stmt->fetch()) {
+                $errors[] = 'Invalid chat recipient.';
+            } else {
             $stmt = $pdo->prepare("INSERT INTO messages (sender_id, receiver_id, text_message) VALUES (?, ?, ?)");
             $stmt->execute([$current_user_id, $receiver_id, $message]);
             // Redirect to refresh conversation
             header("Location: messages.php?chat=$receiver_id");
             exit;
+            }
         } else {
             $errors[] = 'Message cannot be empty.';
         }
@@ -75,7 +84,7 @@ if (isset($_GET['chat'])) {
                 <li><a href="dashboard.php">Dashboard</a></li>
                 <li><a href="profile.php">Profile</a></li>
                 <li><a href="messages.php">Messages</a></li>
-                <li><a href="login.php?logout=1">Logout</a></li>
+                <li><form class="logout-form" method="post" action="logout.php"><?php echo csrf_input(); ?><button type="submit">Logout</button></form></li>
             </ul>
         </div>
     </div>
@@ -83,7 +92,7 @@ if (isset($_GET['chat'])) {
     <main>
         <h1>Private Messaging</h1>
         <nav>
-            <a href="dashboard.php">Back to Dashboard</a> | <a href="login.php?logout=1">Logout</a>
+            <a href="dashboard.php">Back to Dashboard</a>
         </nav>
 
         <?php if (!empty($errors)): ?>
@@ -98,6 +107,7 @@ if (isset($_GET['chat'])) {
 
         <h2>Search for a User</h2>
         <form method="POST">
+            <?php echo csrf_input(); ?>
             <input type="text" name="search_term" placeholder="Enter username or email" required>
             <button type="submit" name="search">Search</button>
         </form>
@@ -126,6 +136,7 @@ if (isset($_GET['chat'])) {
                 <?php endforeach; ?>
             </div>
             <form method="POST">
+                <?php echo csrf_input(); ?>
                 <input type="hidden" name="receiver_id" value="<?php echo $receiver_id; ?>">
                 <textarea name="message" rows="3" cols="50" placeholder="Type your message..." required></textarea><br>
                 <button type="submit" name="send_message">Send</button>

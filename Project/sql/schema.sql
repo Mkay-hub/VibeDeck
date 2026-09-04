@@ -1,101 +1,52 @@
--- Active: 1760523181098@@127.0.0.1@3306
-
-DROP DATABASE IF EXISTS socialdb;
-
-CREATE DATABASE socialdb CHARACTER SET utf8mb4;
-
+-- VibeDeck fresh-install schema. This file never drops an existing database.
+CREATE DATABASE IF NOT EXISTS socialdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE socialdb;
 
-CREATE TABLE socialdb.users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100) NOT NULL UNIQUE,
+CREATE TABLE IF NOT EXISTS users (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(25) NOT NULL UNIQUE,
+    email VARCHAR(254) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    profile_pic LONGBLOB,
-    profile_pic_size INT NOT NULL DEFAULT 0,
-    bio TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+    profile_pic VARCHAR(255) NULL,
+    bio TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
 
-CREATE TABLE socialdb.posts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+CREATE TABLE IF NOT EXISTS posts (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
     content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (id)
-);
+    image_path VARCHAR(255) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_posts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_posts_created (created_at),
+    INDEX idx_posts_user_created (user_id, created_at)
+) ENGINE=InnoDB;
 
-CREATE TABLE socialdb.messages (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sender_id INT NOT NULL,
-    receiver_id INT NOT NULL,
+CREATE TABLE IF NOT EXISTS messages (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT UNSIGNED NOT NULL,
+    receiver_id INT UNSIGNED NOT NULL,
     text_message TEXT NOT NULL,
-    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (sender_id) REFERENCES users (id),
-    FOREIGN KEY (receiver_id) REFERENCES users (id)
-);
+    sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_messages_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_messages_receiver FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_messages_conversation (sender_id, receiver_id, sent_at),
+    INDEX idx_messages_received (receiver_id, sender_id, sent_at)
+) ENGINE=InnoDB;
 
--- Insert sample users
-INSERT INTO
-    users (
-        username,
-        email,
-        password_hash,
-        bio
-    )
-VALUES (
-        'john_doe',
-        'john@example.com',
-        '$2y$10$examplehashedpassword1',
-        'Hello, I am John!'
-    ),
-    (
-        'jane_smith',
-        'jane@example.com',
-        '$2y$10$examplehashedpassword2',
-        'Jane here, loving life.'
-    ),
-    (
-        'alice_wonder',
-        'alice@example.com',
-        '$2y$10$examplehashedpassword3',
-        'Adventurer at heart.'
-    );
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    token_hash CHAR(64) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_password_resets_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_password_resets_expiry (expires_at)
+) ENGINE=InnoDB;
 
--- Insert sample posts
-INSERT INTO
-    posts (user_id, content)
-VALUES (1, 'This is my first post!'),
-    (
-        2,
-        'Enjoying the sunny weather.'
-    ),
-    (
-        3,
-        'Exploring new places today.'
-    );
-
--- Insert sample messages
-INSERT INTO
-    messages (
-        sender_id,
-        receiver_id,
-        text_message
-    )
-VALUES (
-        1,
-        2,
-        'Hey Jane, how are you?'
-    ),
-    (
-        2,
-        1,
-        'Hi John, I am good! Thanks for asking.'
-    ),
-    (
-        3,
-        1,
-        'John, let\'s catch up soon.'
-    );
-
-SELECT * FROM users;
+-- Existing installations need a migration before using the new application:
+-- ALTER TABLE users MODIFY profile_pic VARCHAR(255) NULL, DROP COLUMN profile_pic_size;
+-- ALTER TABLE posts ADD COLUMN image_path VARCHAR(255) NULL AFTER content;
+-- CREATE TABLE password_resets (...same definition as above...);
