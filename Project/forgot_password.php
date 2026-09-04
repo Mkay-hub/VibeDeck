@@ -26,12 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $tokenHash = hash('sha256', $plainToken);
                     $pdo->prepare('DELETE FROM password_resets WHERE user_id = ? OR expires_at < NOW()')->execute([$user['id']]);
                     $pdo->prepare('INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))')->execute([$user['id'], $tokenHash]);
-                    $baseUrl = rtrim(getenv('APP_URL') ?: 'http://localhost/ITP622A_Assignment/Project', '/');
-                    $link = $baseUrl . '/forgot_password.php?token=' . urlencode($plainToken);
-                    @mail($user['email'], 'VibeDeck password reset', "Use this link within one hour to reset your password:\n\n" . $link, "Content-Type: text/plain; charset=UTF-8");
+                    // Local-only flow: bypasses email delivery and opens the one-time reset link.
+                    header('Location: forgot_password.php?token=' . urlencode($plainToken));
+                    exit;
                 }
             }
-            $success = 'If that email address is registered, a password-reset link has been sent.';
+            $success = 'If that email address is registered, a reset link is available locally.';
         }
     } elseif (isset($_POST['reset_password'])) {
         $token = trim($_POST['token'] ?? '');
@@ -64,5 +64,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php if ($errors): ?><div class="errors" role="alert"><ul><?php foreach ($errors as $error): ?><li><?php echo e($error); ?></li><?php endforeach; ?></ul></div><?php endif; ?>
 <?php if ($success): ?><p class="success" role="status"><?php echo e($success); ?></p><?php endif; ?>
 <?php if ($token): ?><form method="post"><?php echo csrf_input(); ?><input type="hidden" name="token" value="<?php echo e($token); ?>"><label for="new_password">New password</label><input type="password" id="new_password" name="new_password" minlength="8" required><label for="confirm_password">Confirm new password</label><input type="password" id="confirm_password" name="confirm_password" minlength="8" required><button type="submit" name="reset_password">Reset Password</button></form>
-<?php else: ?><form method="post"><?php echo csrf_input(); ?><label for="email">Enter your email address</label><input type="email" id="email" name="email" required><button type="submit" name="request_reset">Send reset link</button></form><?php endif; ?>
+<?php else: ?><form method="post"><?php echo csrf_input(); ?><label for="email">Enter your email address</label><input type="email" id="email" name="email" required><button type="submit" name="request_reset">Continue to reset</button></form><?php endif; ?>
 <p><a href="login.php">Back to Login</a></p></div><script src="JS/main.js"></script></body></html>

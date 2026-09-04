@@ -41,7 +41,7 @@ This checklist records issues found during a static review of the current codeba
 
 ## Verification checklist after remediation
 
-- [ ] A user cannot reset another user's password without a valid, unexpired, single-use token delivered to that user's email.
+- [ ] In local/demo mode, a reset token is one-time and expires; do not deploy this flow because entering a registered email starts the reset process.
 - [ ] Invalid, oversized, spoofed, and executable upload attempts are rejected; accepted images are stored safely and display correctly.
 - [ ] All write requests reject a missing or invalid CSRF token, and logout is a token-protected POST action.
 - [ ] Registration and profile editing handle duplicate usernames/emails cleanly, and uploaded profile pictures persist with the corrected schema.
